@@ -7,7 +7,7 @@ import org.springframework.context.annotation.PropertySource;
 
 @Configuration
 @Data
-@PropertySource("application.properties") //указать где свойства, которые будут счит через value
+@PropertySource("classpath:application.properties") //указать где свойства, которые будут счит через value
 public class EnglishDictionaryConfiguration {
     @Value("${bot.name}")
     String botName;
