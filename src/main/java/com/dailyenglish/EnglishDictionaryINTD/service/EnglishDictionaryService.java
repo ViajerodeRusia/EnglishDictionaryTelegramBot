@@ -2,9 +2,6 @@ package com.dailyenglish.EnglishDictionaryINTD.service;
 
 import com.dailyenglish.EnglishDictionaryINTD.configuration.EnglishDictionaryConfiguration;
 import com.dailyenglish.EnglishDictionaryINTD.http.FreeDictionaryAPI;
-import com.dailyenglish.EnglishDictionaryINTD.model.Definition;
-import com.dailyenglish.EnglishDictionaryINTD.model.DefinitionResponse;
-import com.dailyenglish.EnglishDictionaryINTD.model.Meaning;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -22,11 +18,14 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class EnglishDictionaryService extends TelegramLongPollingBot {
     private final EnglishDictionaryConfiguration englishDictionaryConfiguration;
     private final FreeDictionaryAPI freeDictionaryAPI;
+    private final TranslationService translationService;
 
     public EnglishDictionaryService(@Autowired EnglishDictionaryConfiguration englishDictionaryConfiguration,
-                                    @Autowired FreeDictionaryAPI oxfordDictionaryClient, FreeDictionaryAPI freeDictionaryAPI) {
+                                    @Autowired FreeDictionaryAPI freeDictionaryAPI,
+                                    @Autowired TranslationService translationService) {
         this.englishDictionaryConfiguration = englishDictionaryConfiguration;
         this.freeDictionaryAPI = freeDictionaryAPI;
+        this.translationService = translationService;
     }
 
     @Override
@@ -56,9 +55,9 @@ public class EnglishDictionaryService extends TelegramLongPollingBot {
             log.error("Error occurred while sending message: " + e.getMessage(), e);
         }
     }
-
     @Override
     public void onUpdateReceived(Update update) {
+        //Обработка входящих сообщений
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
@@ -86,7 +85,8 @@ public class EnglishDictionaryService extends TelegramLongPollingBot {
             StringBuilder messageBuilder = new StringBuilder();
             for (JsonNode node : rootNode) {
                 String wordRequired = node.path("word").asText();
-                messageBuilder.append("Определение слова '").append(wordRequired).append("':\n");
+                messageBuilder.append("Определение слова '").append(wordRequired).append("' - "
+                        + translationService.translateEngToRus(wordRequired) + ":\n");
 
                 // Извлекаем определения для каждого слова
                 JsonNode meaningsNode = node.path("meanings");
